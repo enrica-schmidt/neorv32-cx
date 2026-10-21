@@ -1,0 +1,127 @@
+../../../sw/lib/source/neorv32_uart.c: In function 'neorv32_uart_setup':
+../../../sw/lib/source/neorv32_uart.c:92:2: warning: #warning UART0_SIM_MODE (primary UART) enabled! Sending all UART0.TX data to text.io simulation output instead of real UART0 transmitter. Use this for simulation only! [-Wcpp]
+   92 | #warning UART0_SIM_MODE (primary UART) enabled! \
+      |  ^~~~~~~
+Memory utilization:
+   text	   data	    bss	    dec	    hex	filename
+   6252	      0	    296	   6548	   1994	main.elf
+Generating neorv32_imem_image.vhd
+Executable (VHD): 6252 bytes
+Installing application image to ../../../rtl/core/neorv32_imem_image.vhd
+Simulating processor using default testbench...
+../rtl/core/neorv32_cpu_alu_cx_wrapper.vhd:13:45:error: extra ';' at end of interface list
+        CXU_STATUS_W  : natural range 3 to 3;
+                                            ^
+../rtl/core/neorv32_cpu_alu_cx_wrapper.vhd:33:64:error: extra ';' at end of interface list
+        resp_data   : in std_ulogic_vector(CXU_DATA_W downto 0);
+                                                               ^
+../rtl/core/neorv32_cpu_alu_cx_wrapper.vhd:57:37:error: unexpected token 'when' in a primary
+    with inst_i select req_func <=  when "0001011",
+                                    ^
+../rtl/core/neorv32_cpu_alu_cx_wrapper.vhd:58:9:error: unexpected token 'when' in a primary
+        when "0101011",
+        ^
+../rtl/core/neorv32_cpu_alu_cx_wrapper.vhd:59:9:error: unexpected token 'when' in a primary
+        when "1011011",
+        ^
+../rtl/core/neorv32_cpu_alu_cx_wrapper.vhd:60:9:error: unexpected token 'when' in a primary
+        when others;
+        ^
+analyze ../rtl/core/neorv32_package.vhd
+analyze ../sim/jtag_dmi_pkg.vhd
+analyze ../sim/psram_model.vhd
+analyze ../rtl/core/neorv32_prim.vhd
+analyze ../sim/sim_uart_rx.vhd
+analyze ../sim/xbus_gateway.vhd
+analyze ../sim/xbus_memory.vhd
+analyze ../sim/xbus_fmem.vhd
+analyze ../sim/neorv32_tb.vhd
+analyze ../rtl/core/neorv32_sys.vhd
+analyze ../rtl/core/neorv32_cpu_decompressor.vhd
+analyze ../rtl/core/neorv32_cpu_frontend.vhd
+analyze ../rtl/core/neorv32_cpu_control.vhd
+analyze ../rtl/core/neorv32_cpu_hwtrig.vhd
+analyze ../rtl/core/neorv32_cpu_counters.vhd
+analyze ../rtl/core/neorv32_cpu_alu_shifter.vhd
+analyze ../rtl/core/neorv32_cpu_alu_muldiv.vhd
+analyze ../rtl/core/neorv32_cpu_alu_bitmanip.vhd
+analyze ../rtl/core/neorv32_cpu_alu_fpu.vhd
+analyze ../rtl/core/neorv32_cpu_alu_cond.vhd
+analyze ../rtl/core/neorv32_cpu_alu_crypto.vhd
+analyze ../rtl/core/neorv32_cpu_alu.vhd
+analyze ../rtl/core/neorv32_cpu_lsu.vhd
+analyze ../rtl/core/neorv32_cpu_pmp.vhd
+analyze ../rtl/core/neorv32_cpu_trace.vhd
+analyze ../rtl/core/neorv32_cpu.vhd
+analyze ../rtl/core/neorv32_cache.vhd
+analyze ../rtl/core/neorv32_bus.vhd
+analyze ../rtl/core/neorv32_core_complex.vhd
+analyze ../rtl/core/neorv32_dma.vhd
+analyze ../rtl/core/neorv32_smc.vhd
+analyze ../rtl/core/neorv32_xbus.vhd
+analyze ../rtl/core/neorv32_sdi.vhd
+analyze ../rtl/core/neorv32_gpio.vhd
+analyze ../rtl/core/neorv32_wdt.vhd
+analyze ../rtl/core/neorv32_clint.vhd
+analyze ../rtl/core/neorv32_uart.vhd
+analyze ../rtl/core/neorv32_spi.vhd
+analyze ../rtl/core/neorv32_twi.vhd
+analyze ../rtl/core/neorv32_twd.vhd
+analyze ../rtl/core/neorv32_pwm.vhd
+analyze ../rtl/core/neorv32_trng.vhd
+analyze ../rtl/core/neorv32_neoled.vhd
+analyze ../rtl/core/neorv32_gptmr.vhd
+analyze ../rtl/core/neorv32_onewire.vhd
+analyze ../rtl/core/neorv32_slink.vhd
+analyze ../rtl/core/neorv32_tracer.vhd
+analyze ../rtl/core/neorv32_sysinfo.vhd
+analyze ../rtl/core/neorv32_debug_dtm.vhd
+analyze ../rtl/core/neorv32_debug_auth.vhd
+analyze ../rtl/core/neorv32_debug_dm.vhd
+analyze ../rtl/core/neorv32_top.vhd
+analyze ../rtl/core/neorv32_cpu_alu_cfu.vhd
+analyze ../rtl/core/neorv32_cpu_regfile.vhd
+analyze ../rtl/core/neorv32_cache_ram.vhd
+analyze ../rtl/core/neorv32_imem_image.vhd
+analyze ../rtl/core/neorv32_imem.vhd
+analyze ../rtl/core/neorv32_dmem.vhd
+analyze ../rtl/core/neorv32_bootrom_image.vhd
+analyze ../rtl/core/neorv32_bootrom.vhd
+analyze ../rtl/core/neorv32_cfs.vhd
+elaborate neorv32_tb
+GHDL simulation run parameters: --stop-time=10ms
+../rtl/core/neorv32_cpu.vhd:156:5:@0ms:(assertion note): [NEORV32] CPU ISA: rv32iabcmux_zaamo_zalrsc_zba_zbb_zbc_zbkb_zbkc_zbkx_zbs_zca_zcb_zcmop_zfinx_zibi_zicntr_zicond_zicsr_zifencei_zihpm_zimop_zkn_zknd_zkne_zknh_zks_zksed_zksh_zkt_zmmul_sdext_sdtrig_smcntrpmf_smpmp_xcfu
+../rtl/core/neorv32_cpu.vhd:201:5:@0ms:(assertion note): [NEORV32] CPU tuning options: trace fast_mul fast_mul_regs=1 fast_shift rf_arch=sram_sync 
+../rtl/core/neorv32_trng.vhd:320:3:@0ms:(assertion note): [neoTRNG] The neoTRNG (v3.4) - A Tiny and Platform-Independent True Random Number Generator, github.com/stnolting/neoTRNG
+../rtl/core/neorv32_trng.vhd:330:3:@0ms:(assertion warning): [neoTRNG] Simulation-mode enabled (NO TRUE/PHYSICAL RANDOM)!
+../rtl/core/neorv32_tracer.vhd:271:5:@0ms:(assertion note): [NEORV32] CPU 0 trace logging enabled -> neorv32.tracer0.log
+../rtl/core/neorv32_tracer.vhd:286:5:@0ms:(assertion note): [NEORV32] CPU 1 trace logging enabled -> neorv32.tracer1.log
+../rtl/core/neorv32_debug_auth.vhd:67:3:@0ms:(assertion warning): [NEORV32] Using DEFAULT on-chip debugger authenticator. Replace by custom module.
+../rtl/core/neorv32_top.vhd:397:5:@0ms:(assertion note): [NEORV32] The NEORV32 RISC-V Processor (v01.13.06.01), github.com/stnolting/neorv32
+../rtl/core/neorv32_top.vhd:406:5:@0ms:(assertion note): [NEORV32] Processor Configuration: CPU (smp-dual-core) IMEM-ROM DMEM I-CACHE D-CACHE SMC XBUS CLINT GPIO UART0 UART1 SPI SDI TWI TWD PWM WDT TRNG CFS NEOLED GPTMR ONEWIRE DMA SLINK SYSINFO TRACER OCD OCD-AUTH OCD-HWBP 
+../rtl/core/neorv32_top.vhd:443:5:@0ms:(assertion warning): [NEORV32] Assuming this is a simulation.
+../rtl/core/neorv32_top.vhd:455:5:@0ms:(assertion note): [NEORV32] BOOT_MODE_SELECT 2 - booting IMEM image
+../sim/neorv32_tb.vhd:154:7:@1100ns:(report note): [TB:JTAG] Resetting JTAG tap...
+../sim/neorv32_tb.vhd:159:7:@2us:(report note): [TB:JTAG] Enabling debug module...
+../sim/neorv32_tb.vhd:164:7:@6660ns:(report note): [TB:JTAG] Authenticating...
+../sim/neorv32_tb.vhd:168:9:@19460ns:(report note): [TB:JTAG] JTAG access authenticated.
+../sim/neorv32_tb.vhd:174:7:@19460ns:(report note): [TB:JTAG] Halting CPU-0...
+../sim/neorv32_tb.vhd:181:9:@40600ns:(report note): [TB:JTAG] CPU-0 halted.
+../sim/neorv32_tb.vhd:188:7:@40700ns:(report note): [TB:JTAG] Writing to memory (0xF0000000) via program buffer...
+../sim/neorv32_tb.vhd:197:9:@76300ns:(report note): [TB:JTAG] Memory write successful.
+../sim/neorv32_tb.vhd:204:7:@76400ns:(report note): [TB:JTAG] Resetting SoC and halting CPU-0...
+../sim/neorv32_tb.vhd:216:9:@110280ns:(report note): [TB:JTAG] CPU-0 reset and halted.
+../sim/neorv32_tb.vhd:223:7:@110380ns:(report note): [TB:JTAG] Resuming CPU-0...
+../sim/neorv32_tb.vhd:230:9:@131420ns:(report note): [TB:JTAG] CPU-0 resumed.
+../sim/neorv32_tb.vhd:240:7:@144320ns:(report note): [TB:JTAG] Disabling debug module...
+../sim/neorv32_tb.vhd:244:9:@157120ns:(report note): [TB:JTAG] Debug module disabled.
+
+<<< NEORV32 Custom Functions Unit (CFU) - Custom Instructions Example >>>
+
+CSR_FFLAGS contains: 0
+CSR_FFLAGS contains: 3 and should contain 3
+CSR_FFLAGS contains: 31 and should contain 31
+Comparing results... Custom instructions OK!
+
+CFU demo program completed.
+./neorv32_tb:info: simulation stopped by --stop-time @10ms
