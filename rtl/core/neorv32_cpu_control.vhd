@@ -663,6 +663,10 @@ begin
       when csr_tselect_c | csr_tdata1_c | csr_tdata2_c | csr_tdata3_c | csr_tinfo_c =>
         csr_valid(2) <= bool_to_ulogic_f(RISCV_ISA_Sdtrig);
 
+      when csr_test_c =>
+        --csr_valid(2) <= bool_to_ulogic_f(RISCV_ISA_Zcx); check if cx extension is present
+        csr_valid(2) <= '1';
+
       -- undefined / not implemented --
       when others =>
         csr_valid(2) <= '0';

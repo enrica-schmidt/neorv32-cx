@@ -23,6 +23,11 @@ entity neorv32_cpu_alu_cfu is
     -- global control --
     clk_i    : in  std_ulogic; -- global clock, rising edge
     rstn_i   : in  std_ulogic; -- global reset, low-active, async
+    -- CSR interface --
+    csr_we_i    : in  std_ulogic;                     -- write enable
+    csr_addr_i  : in  std_ulogic_vector(11 downto 0); -- address (later only use necessary bits to distinguish within the csrs of the cfu)
+    csr_wdata_i : in  std_ulogic_vector(31 downto 0); -- write data
+    csr_rdata_o : out std_ulogic_vector(31 downto 0); -- read data
     -- request --
     start_i  : in  std_ulogic; -- start trigger, single-shot
     inst_i   : in  std_ulogic_vector(31 downto 0); -- full instruction word
@@ -35,6 +40,8 @@ entity neorv32_cpu_alu_cfu is
 end entity;
 
 architecture neorv32_cpu_alu_cfu_rtl of neorv32_cpu_alu_cfu is
+  -- CFU CSRs --
+  signal csr_test    : std_ulogic_vector(31 downto 0);
 
   -- supported CFU opcodes --
   constant opcode_custom0_c : std_ulogic_vector(6 downto 0) := "0001011"; -- CUSTOM-0 opcode
@@ -64,6 +71,48 @@ architecture neorv32_cpu_alu_cfu_rtl of neorv32_cpu_alu_cfu is
   signal imm12  : std_ulogic_vector(11 downto 0); -- i-type immediate
 
 begin
+  -- CSR Access -----------------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+
+  -- write access --
+  csr_write: process(rstn_i, clk_i)
+  begin
+    if (rstn_i = '0') then
+      csr_test <= (others => '0');
+    elsif rising_edge(clk_i) then
+      if (csr_we_i = '1') then
+        csr_test <= csr_wdata_i; --later when more than one csr here, need to check addr
+        -- exception flags --
+        --if (csr_addr_i = csr_test_c) then
+        --  csr_fflags <= csr_wdata_i(4 downto 0);
+        --end if;
+        -- rounding mode --
+        --if (csr_addr_i = csr_frm_c(1 downto 0)) then
+        --  csr_frm <= csr_wdata_i(2 downto 0);
+        --end if;
+        -- control/status (frm & fflags) --
+        --if (csr_addr_i = csr_fcsr_c(1 downto 0)) then
+        --  csr_frm    <= csr_wdata_i(7 downto 5);
+        --  csr_fflags <= csr_wdata_i(4 downto 0);
+        --end if;
+      --else -- auto-update ("accumulate" flags)
+      --  csr_fflags <= csr_fflags or fflags;
+      end if;
+    end if;
+  end process;
+
+  -- read access --
+  csr_read: process(csr_addr_i, csr_test)
+  begin
+    csr_rdata_o <= csr_test;
+    --csr_rdata_o <= (others => '0'); -- default
+    --case csr_addr_i is
+    --  when "01"   => csr_rdata_o(4 downto 0) <= csr_fflags; -- exception flags
+    --  when "10"   => csr_rdata_o(2 downto 0) <= csr_frm; -- rounding mode
+    --  when "11"   => csr_rdata_o(7 downto 0) <= csr_frm & csr_fflags; -- control/status (frm & fflags)
+    --  when others => null;
+    --end case;
+  end process;
 
   -- Instruction Decode ----------------------------------------------------------------
   start  <= start_i when (inst_i(6 downto 0) = test_r_type_c) or (inst_i(6 downto 0) = test_i_type_c) else '0'; -- valid instruction?

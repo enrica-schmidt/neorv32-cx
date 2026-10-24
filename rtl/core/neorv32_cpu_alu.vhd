@@ -86,8 +86,8 @@ architecture neorv32_cpu_alu_rtl of neorv32_cpu_alu is
   signal cp_result : cp_data_t;
   signal cp_valid : std_ulogic_vector(6 downto 0);
   signal cfu_inst : std_ulogic_vector(31 downto 0);
-  signal fpu_csr_en, fpu_csr_we, cfu_done, cfu_busy : std_ulogic;
-  signal fpu_csr_rd, cfu_res : std_ulogic_vector(31 downto 0);
+  signal fpu_csr_en, fpu_csr_we, cfu_csr_en, cfu_csr_we, cfu_done, cfu_busy : std_ulogic;
+  signal fpu_csr_rd, cfu_csr_rd, cfu_res : std_ulogic_vector(31 downto 0);
 
 begin
 
@@ -139,6 +139,10 @@ begin
   -- set-on-less-than --
   slt_opb <= (opb(31) xnor ctrl_i.alu_unsigned) & opb(30 downto 0);
   slt     <= '1' when unsigned(cmp_rs1) < unsigned(slt_opb) else '0';
+
+  csr_o <= cfu_csr_rd when (cfu_csr_en = '1') else
+         fpu_csr_rd when (fpu_csr_en = '1') else
+         (others => '0');
 
   -- **************************************************************************************************************************
   -- Co-Processors
@@ -262,7 +266,7 @@ begin
     -- CSR proxy --
     fpu_csr_en <= '1' when (ctrl_i.csr_addr(11 downto 2) = csr_fflags_c(11 downto 2)) else '0';
     fpu_csr_we <= fpu_csr_en and ctrl_i.csr_we;
-    csr_o      <= fpu_csr_rd when (fpu_csr_en = '1') else (others => '0');
+    --csr_o      <= fpu_csr_rd when (fpu_csr_en = '1') else (others => '0');
   end generate;
 
   cpu_alu_fpu_disabled:
@@ -285,6 +289,11 @@ begin
       -- global control --
       clk_i    => clk_i,             -- global clock, rising edge
       rstn_i   => rstn_i,            -- global reset, low-active, async
+      -- CSR interface --
+      csr_we_i    => cfu_csr_we,                  -- write enable
+      csr_addr_i  => ctrl_i.csr_addr,             -- address
+      csr_wdata_i => ctrl_i.csr_wdata,            -- write data
+      csr_rdata_o => cfu_csr_rd,                  -- read data
       -- request
       start_i  => ctrl_i.alu_cp_cfu, -- start trigger, single-shot
       inst_i   => cfu_inst,          -- instruction word
@@ -319,12 +328,20 @@ begin
       end if;
     end process;
     cp_valid(4) <= cfu_done and (ctrl_i.alu_cp_cfu or cfu_busy);
+
+    -- CSR proxy --
+    cfu_csr_en <= '1' when (ctrl_i.csr_addr = csr_test_c) else '0';
+    cfu_csr_we <= cfu_csr_en and ctrl_i.csr_we;
+    --csr_o      <= cfu_csr_rd when (cfu_csr_en = '1') else (others => '0');
   end generate;
 
   cpu_alu_cfu_disabled:
   if not RISCV_ISA_Xcfu generate
     cfu_inst     <= (others => '0');
     cfu_res      <= (others => '0');
+    cfu_csr_en   <= '0';
+    cfu_csr_we   <= '0';
+    cfu_csr_rd   <= (others => '0');
     cfu_done     <= '0';
     cfu_busy     <= '0';
     cp_result(4) <= (others => '0');
