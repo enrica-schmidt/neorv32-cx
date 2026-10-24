@@ -15,7 +15,6 @@
  **************************************************************************/
 #include <neorv32.h>
 
-
 /**********************************************************************//**
  * @name User configuration
  **************************************************************************/
@@ -27,7 +26,8 @@
 /** Input data size (number of 32-bit words), has to be even */
 //#define DATA_NUM    64
 /**@}*/
-
+#define RTE_TERM_HL_ON  "\033[1;31m" // enable highlighting
+#define RTE_TERM_HL_OFF "\033[0m"    // restore default
 
 /**********************************************************************//**
  * @name Define XTEA CFU instruction based on the intrinsic templates
@@ -69,6 +69,7 @@
 /**********************************************************************//**
  * @name Global variables
  **************************************************************************/
+volatile uint32_t illegal_instr_exception_count = 0;
 /**@{*/
 /** Timing data */
 uint32_t time_addi_sw, time_addi_hw, time_subi_sw, time_subi_hw, time_add_sw, time_add_hw, time_sub_sw, time_sub_hw, time_bitswap_sw, time_bitswap_hw;
@@ -87,6 +88,54 @@ uint32_t sw_bitswap(uint32_t rs1) {
   return res;
 }
 
+//reads csr, prints, then writes write_value to it, reads again and prints, restores old value. 
+//returns err = 0 if the value read after writing is the desired write_value, else returns 1
+//uint32_t verify_read_write_csr(const enum NEORV32_CSR_enum csr, uint32_t write_value) {
+#define verify_read_write_csr(csr, write_value) ({ \
+  uint32_t old_csr_val, new_csr_val, err, old_exception_ctr; \
+  err = 0; \
+  old_exception_ctr = illegal_instr_exception_count; \
+  old_csr_val = neorv32_cpu_csr_read(csr); /*todo: check if there was an exception*/\
+  if (illegal_instr_exception_count == old_exception_ctr) { neorv32_uart0_printf("Before writing, CSR 0x%X contains: %u\n", csr, old_csr_val); } \
+  neorv32_cpu_csr_write(csr, write_value); /*todo: check if there was an exception*/\
+  new_csr_val = neorv32_cpu_csr_read(csr); /*todo: check if there was an exception*/\
+  if (illegal_instr_exception_count == old_exception_ctr) { neorv32_uart0_printf("After writing, CSR 0x%X contains: %u and should contain %u\n", csr, new_csr_val, write_value);} \
+  if (new_csr_val != write_value) { \
+    err = 1; \
+    if (illegal_instr_exception_count == old_exception_ctr) { neorv32_uart0_printf("ERROR! Unexpected value %u read from CSR 0x%X after writing %u.\n", new_csr_val, csr, write_value);} \
+  } \
+  neorv32_cpu_csr_write(csr, old_csr_val); /*restore CSR to the value it had before calling this function*/ /*todo: check if there was an exception*/\
+  err; \
+})
+
+void trap_handler_illegal_instruction(void) {
+  // intro
+  neorv32_uart0_printf(RTE_TERM_HL_ON "<NEORV32-CUSTOM-HANDLER-ILLEGAL-INSTR> ");
+  // CPU ID
+  if (neorv32_cpu_csr_read(CSR_MHARTID) & 1) {
+    neorv32_uart0_printf("[cpu1|");
+  }
+  else {
+    neorv32_uart0_printf("[cpu0|");
+  }
+  // privilege level of the CPU when the trap occurred
+  if (neorv32_cpu_csr_read(CSR_MSTATUS) & (3 << CSR_MSTATUS_MPP_L)) {
+    neorv32_uart0_printf("M] "); // machine-mode
+  }
+  else {
+    neorv32_uart0_printf("U] "); // user-mode
+  }
+  // trap cause (should be 2 because this is only called if it's 2)
+  //uint32_t cause = neorv32_cpu_csr_read(CSR_MCAUSE);
+  //increment a counter that counts illegal instruction exceptions (implemented as a CSR? or as a variable in C code? but the variable would have to be global since the trap handler cannot take any arguments)
+  illegal_instr_exception_count++;
+  // instruction address
+  neorv32_uart0_printf(" MEPC=0x%X", neorv32_cpu_csr_read(CSR_MEPC));
+  // trap value
+  neorv32_uart0_printf(" MTVAL=0x%X", neorv32_cpu_csr_read(CSR_MTVAL));
+  // outro
+  neorv32_uart0_printf(" </NEORV32-CUSTOM-HANDLER-ILLEGAL-INSTR>\n" RTE_TERM_HL_OFF);
+}
 
 /**********************************************************************//**
  * Main function: run pure-SW XTEA and compare with HW-accelerated XTEA
@@ -143,20 +192,38 @@ int main() {
   // intro
   neorv32_uart0_printf("\n<<< NEORV32 Custom Functions Unit (CFU) - Custom Instructions Example >>>\n\n");
 
+
 ////////////////////////////////////////////////////////////////////////
-//read and write CSR mcycle (make sure this mechanism works for an implemented csr)
-  uint32_t csr_fflags_read, csr_fflags_write;
-  csr_fflags_read = neorv32_cpu_csr_read(CSR_FFLAGS);
-  neorv32_uart0_printf("CSR_FFLAGS contains: %u\n", csr_fflags_read);
-  csr_fflags_write = 0x3;
-  neorv32_cpu_csr_write(CSR_FFLAGS, csr_fflags_write);
-  csr_fflags_read = neorv32_cpu_csr_read(CSR_FFLAGS);
-  neorv32_uart0_printf("CSR_FFLAGS contains: %u and should contain %u\n", csr_fflags_read, csr_fflags_write);
-  csr_fflags_write = 0x1F; //fflags is only 5 bit, therefore can only store values up to 0x1F
-  neorv32_cpu_csr_write(CSR_FFLAGS, csr_fflags_write);
-  csr_fflags_read = neorv32_cpu_csr_read(CSR_FFLAGS);
-  neorv32_uart0_printf("CSR_FFLAGS contains: %u and should contain %u\n", csr_fflags_read, csr_fflags_write);
+  //install my own trap handler for illegal instruction exceptions which increments a counter that can be checked after, to check if an illegal instruction occurred
+  uint32_t install_handler_success = -1;
+  install_handler_success = neorv32_rte_handler_install(TRAP_CODE_I_ILLEGAL, trap_handler_illegal_instruction);
+  if (install_handler_success != 0) {
+    neorv32_uart0_printf("ERROR when installing the custom trap handler for illegal instruction exceptions./n");
+  }
+
+////////////////////////////////////////////////////////////////////////
+  //read and write CSR mcycle (make sure this mechanism works for an implemented csr)
+  uint32_t err = 0;
+  err += verify_read_write_csr(CSR_FFLAGS, 0x3);
+  err += verify_read_write_csr(CSR_FFLAGS, 0x1F);
+  if (err != 0) {
+    neorv32_uart0_printf("Error when writing to CSR_FFLAGS.\n");
+  } else {
+    neorv32_uart0_printf("Successfully written to CSR_FFLAGS.\n");
+  }
+
 //read new test CSR (test if newly added csr works, can be read and written)
+  err = 0;
+  //todo: when the read or write triggers an exception, 0 is returned as read value (verify this). catch this with a custom trap handler. check if the read or write triggered an exception and print the exception instead of the 0.
+  err += verify_read_write_csr(CSR_TEST, 0x3);
+  err += verify_read_write_csr(CSR_TEST, 0x1F);
+  err += verify_read_write_csr(CSR_TEST, 0x37B); //32 bit CSR_TEST
+  err += verify_read_write_csr(CSR_TEST, 0xFFFFFFFF);
+  if (err != 0) {
+    neorv32_uart0_printf("Error when writing to CSR_TEST. illegal_instr_counter: %u\n", illegal_instr_exception_count);
+  } else {
+    neorv32_uart0_printf("Successfully written to CSR_TEST.\n");
+  }
   /*uint32_t csr_test_read, csr_test_write;
   csr_test_read = neorv32_cpu_csr_read(CSR_TEST);
   neorv32_uart0_printf("CSR_TEST contains: %u\n", csr_test_read);
