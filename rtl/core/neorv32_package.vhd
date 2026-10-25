@@ -647,6 +647,7 @@ package neorv32_package is
   constant csr_mxisah_c         : std_ulogic_vector(11 downto 0) := x"fc1";
   -- new csr for cx
   constant csr_test_c           : std_ulogic_vector(11 downto 0) := x"800";
+  constant csr_test_2_c         : std_ulogic_vector(11 downto 0) := x"801";
 
 -- **********************************************************************************************************
 -- CPU Control

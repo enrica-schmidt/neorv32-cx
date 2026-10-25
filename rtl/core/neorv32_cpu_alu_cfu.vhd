@@ -42,6 +42,7 @@ end entity;
 architecture neorv32_cpu_alu_cfu_rtl of neorv32_cpu_alu_cfu is
   -- CFU CSRs --
   signal csr_test    : std_ulogic_vector(31 downto 0);
+  signal csr_test_2  : std_ulogic_vector(31 downto 0);
 
   -- supported CFU opcodes --
   constant opcode_custom0_c : std_ulogic_vector(6 downto 0) := "0001011"; -- CUSTOM-0 opcode
@@ -78,40 +79,28 @@ begin
   csr_write: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      csr_test <= (others => '0');
+      csr_test   <= (others => '0');
+      csr_test_2 <= (others => '0');
     elsif rising_edge(clk_i) then
       if (csr_we_i = '1') then
-        csr_test <= csr_wdata_i; --later when more than one csr here, need to check addr
-        -- exception flags --
-        --if (csr_addr_i = csr_test_c) then
-        --  csr_fflags <= csr_wdata_i(4 downto 0);
-        --end if;
-        -- rounding mode --
-        --if (csr_addr_i = csr_frm_c(1 downto 0)) then
-        --  csr_frm <= csr_wdata_i(2 downto 0);
-        --end if;
-        -- control/status (frm & fflags) --
-        --if (csr_addr_i = csr_fcsr_c(1 downto 0)) then
-        --  csr_frm    <= csr_wdata_i(7 downto 5);
-        --  csr_fflags <= csr_wdata_i(4 downto 0);
-        --end if;
-      --else -- auto-update ("accumulate" flags)
-      --  csr_fflags <= csr_fflags or fflags;
+        if (csr_addr_i = csr_test_c) then
+          csr_test <= csr_wdata_i;
+        elsif (csr_addr_i = csr_test_2_c) then
+          csr_test_2 <= csr_wdata_i;
+        end if;
       end if;
     end if;
   end process;
 
   -- read access --
-  csr_read: process(csr_addr_i, csr_test)
+  csr_read: process(csr_addr_i, csr_test, csr_test_2)
   begin
-    csr_rdata_o <= csr_test;
-    --csr_rdata_o <= (others => '0'); -- default
-    --case csr_addr_i is
-    --  when "01"   => csr_rdata_o(4 downto 0) <= csr_fflags; -- exception flags
-    --  when "10"   => csr_rdata_o(2 downto 0) <= csr_frm; -- rounding mode
-    --  when "11"   => csr_rdata_o(7 downto 0) <= csr_frm & csr_fflags; -- control/status (frm & fflags)
-    --  when others => null;
-    --end case;
+    csr_rdata_o <= (others => '0'); -- default
+    case csr_addr_i is
+      when csr_test_c   => csr_rdata_o <= csr_test;
+      when csr_test_2_c => csr_rdata_o <= csr_test_2;
+      when others => null;
+    end case;
   end process;
 
   -- Instruction Decode ----------------------------------------------------------------

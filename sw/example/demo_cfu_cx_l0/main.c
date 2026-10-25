@@ -214,25 +214,28 @@ int main() {
 
 //read new test CSR (test if newly added csr works, can be read and written)
   err = 0;
-  //todo: when the read or write triggers an exception, 0 is returned as read value (verify this). catch this with a custom trap handler. check if the read or write triggered an exception and print the exception instead of the 0.
   err += verify_read_write_csr(CSR_TEST, 0x3);
   err += verify_read_write_csr(CSR_TEST, 0x1F);
   err += verify_read_write_csr(CSR_TEST, 0x37B); //32 bit CSR_TEST
-  err += verify_read_write_csr(CSR_TEST, 0xFFFFFFFF);
+  err += verify_read_write_csr(CSR_TEST, 0x37FABFCF);
   if (err != 0) {
     neorv32_uart0_printf("Error when writing to CSR_TEST. illegal_instr_counter: %u\n", illegal_instr_exception_count);
   } else {
     neorv32_uart0_printf("Successfully written to CSR_TEST.\n");
   }
-  /*uint32_t csr_test_read, csr_test_write;
-  csr_test_read = neorv32_cpu_csr_read(CSR_TEST);
-  neorv32_uart0_printf("CSR_TEST contains: %u\n", csr_test_read);
-  csr_test_write = 0;
-  neorv32_cpu_csr_write(CSR_TEST, csr_test_write);
-  neorv32_uart0_printf("CSR_TEST contains: %u and should contain %u\n", csr_test_read, csr_test_write);
-  csr_test_write = 384;
-  neorv32_cpu_csr_write(CSR_TEST, csr_test_write);
-  neorv32_uart0_printf("CSR_TEST contains: %u and should contain %u\n", csr_test_read, csr_test_write);*/
+
+//read new test_2 CSR (test if newly added csr works, can be read and written)
+  err = 0;
+  err += verify_read_write_csr(CSR_TEST_2, 0x9);
+  err += verify_read_write_csr(CSR_TEST_2, 0x1F);
+  err += verify_read_write_csr(CSR_TEST_2, 0x37B); //32 bit CSR_TEST
+  err += verify_read_write_csr(CSR_TEST_2, 0xFFFFFFFF);
+  if (err != 0) {
+    neorv32_uart0_printf("Error when writing to CSR_TEST_2. illegal_instr_counter: %u\n", illegal_instr_exception_count);
+  } else {
+    neorv32_uart0_printf("Successfully written to CSR_TEST_2.\n");
+  }
+
 ////////////////////////////////////////
 //addi
   //neorv32_uart0_printf("test_addi...\n");

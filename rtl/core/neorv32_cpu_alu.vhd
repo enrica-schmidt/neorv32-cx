@@ -330,7 +330,7 @@ begin
     cp_valid(4) <= cfu_done and (ctrl_i.alu_cp_cfu or cfu_busy);
 
     -- CSR proxy --
-    cfu_csr_en <= '1' when (ctrl_i.csr_addr = csr_test_c) else '0';
+    cfu_csr_en <= '1' when ((ctrl_i.csr_addr = csr_test_c) or (ctrl_i.csr_addr = csr_test_2_c)) else '0';
     cfu_csr_we <= cfu_csr_en and ctrl_i.csr_we;
     --csr_o      <= cfu_csr_rd when (cfu_csr_en = '1') else (others => '0');
   end generate;
