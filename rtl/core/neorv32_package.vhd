@@ -645,9 +645,14 @@ package neorv32_package is
   -- NEORV32-specific machine registers --
   constant csr_mxisa_c          : std_ulogic_vector(11 downto 0) := x"fc0";
   constant csr_mxisah_c         : std_ulogic_vector(11 downto 0) := x"fc1";
-  -- new csr for cx
-  constant csr_test_c           : std_ulogic_vector(11 downto 0) := x"800";
-  constant csr_test_2_c         : std_ulogic_vector(11 downto 0) := x"801";
+  -- new CX CSRs
+  constant csr_cx_index_c       : std_ulogic_vector(11 downto 0) := x"800";
+  constant csr_cx_status_c      : std_ulogic_vector(11 downto 0) := x"801";
+  constant csr_mcx_selector_c   : std_ulogic_vector(11 downto 0) := x"bc0";
+  constant csr_mcx_table_c      : std_ulogic_vector(11 downto 0) := x"bc1";
+  -- CSRs inside CFU
+  constant csr_test_c           : std_ulogic_vector(11 downto 0) := x"802";
+  constant csr_test_2_c         : std_ulogic_vector(11 downto 0) := x"803";
 
 -- **********************************************************************************************************
 -- CPU Control

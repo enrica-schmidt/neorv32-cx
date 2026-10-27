@@ -236,6 +236,42 @@ int main() {
     neorv32_uart0_printf("Successfully written to CSR_TEST_2.\n");
   }
 
+//test mcx_selector
+  err = 0;
+  err += verify_read_write_csr(CSR_MCX_SELECTOR, 0x7abcdef9);
+  if (err != 0) {
+    neorv32_uart0_printf("Error when writing to CSR_MCX_SELECTOR. illegal_instr_counter: %u\n", illegal_instr_exception_count);
+  } else {
+    neorv32_uart0_printf("Successfully written to CSR_MCX_SELECTOR.\n");
+  }
+
+//test cx_status
+  err = 0;
+  err += verify_read_write_csr(CSR_CX_STATUS, 0b0011010);
+  if (err != 0) {
+    neorv32_uart0_printf("Error when writing to CSR_CX_STATUS. illegal_instr_counter: %u\n", illegal_instr_exception_count);
+  } else {
+    neorv32_uart0_printf("Successfully written to CSR_CX_STATUS.\n");
+  }
+
+//test mcx_table
+  err = 0;
+  err += verify_read_write_csr(CSR_MCX_TABLE, 0xfa6be000); //need to pad last 12 bits with 0 so the value read corresponds to the value written (only 20 MSB are actually written)
+  if (err != 0) {
+    neorv32_uart0_printf("Error when writing to CSR_MCX_TABLE. illegal_instr_counter: %u\n", illegal_instr_exception_count);
+  } else {
+    neorv32_uart0_printf("Successfully written to CSR_MCX_TABLE.\n");
+  }
+
+//test cx_index
+  err = 0;
+  err += verify_read_write_csr(CSR_CX_INDEX, 0b1110010100);
+  if (err != 0) {
+    neorv32_uart0_printf("Error when writing to CSR_CX_INDEX. illegal_instr_counter: %u\n", illegal_instr_exception_count);
+  } else {
+    neorv32_uart0_printf("Successfully written to CSR_CX_INDEX.\n");
+  }
+
 ////////////////////////////////////////
 //addi
   //neorv32_uart0_printf("test_addi...\n");

@@ -261,8 +261,15 @@ enum NEORV32_CSR_enum {
   /* NEORV32-specific */
   CSR_MXISA          = 0xfc0, /**< 0xfc0 - mxisa:  Machine extended ISA and extensions low word */
   CSR_MXISAH         = 0xfc1,  /**< 0xfc1 - mxisah: Machine extended ISA and extensions high word */
-  CSR_TEST           = 0x800,
-  CSR_TEST_2         = 0x801
+
+  /*new CX CSRs*/
+  CSR_CX_INDEX       = 0x800,
+  CSR_CX_STATUS      = 0x801,
+  CSR_MCX_SELECTOR   = 0xbc0,
+  CSR_MCX_TABLE      = 0xbc1,
+  /*CSRs inside CFU*/
+  CSR_TEST           = 0x802,
+  CSR_TEST_2         = 0x803
 };
 
 /**********************************************************************//**
