@@ -149,10 +149,10 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     dpc          : std_ulogic_vector(31 downto 0); -- mode program counter
     dscratch0    : std_ulogic_vector(31 downto 0); -- debug mode scratch register 0
     -- CX control CSRs
-    mcx_selector : std_ulogic_vector(31 downto 0); 
-    cx_status    : std_ulogic_vector(6 downto 0);
-    mcx_table    : std_ulogic_vector(19 downto 0);
-    cx_index     : std_ulogic_vector(9 downto 0);
+    --mcx_selector : std_ulogic_vector(31 downto 0); 
+    --cx_status    : std_ulogic_vector(6 downto 0);
+    --mcx_table    : std_ulogic_vector(19 downto 0);
+    --cx_index     : std_ulogic_vector(9 downto 0);
   end record;
   signal csr : csr_t; -- register set
   signal csr_wdata, csr_rdata, dcsr_rdata : std_ulogic_vector(31 downto 0); -- read/write data
@@ -668,12 +668,12 @@ begin
       when csr_tselect_c | csr_tdata1_c | csr_tdata2_c | csr_tdata3_c | csr_tinfo_c =>
         csr_valid(2) <= bool_to_ulogic_f(RISCV_ISA_Sdtrig);
 
-      when csr_test_c | csr_test_2_c =>
+      --when csr_test_c | csr_test_2_c =>
         --csr_valid(2) <= bool_to_ulogic_f(RISCV_ISA_Zcx); check if cx extension is present
-        csr_valid(2) <= '1';
+      --  csr_valid(2) <= '1';
 
       when csr_mcx_selector_c | csr_mcx_table_c | csr_cx_index_c | csr_cx_status_c =>
-        csr_valid(2) <= '1';
+        csr_valid(2) <= bool_to_ulogic_f(RISCV_ISA_Xcfu);
 
       -- undefined / not implemented --
       when others =>
@@ -1050,10 +1050,10 @@ begin
       csr.dcsr_cause   <= (others => '0');
       csr.dpc          <= (others => '0');
       csr.dscratch0    <= (others => '0');
-      csr.mcx_selector <= (others => '0');
-      csr.cx_status    <= (others => '0');
-      csr.mcx_table    <= (others => '0');
-      csr.cx_index     <= (others => '0');
+      --csr.mcx_selector <= (others => '0');
+      --csr.cx_status    <= (others => '0');
+      --csr.mcx_table    <= (others => '0');
+      --csr.cx_index     <= (others => '0');
     elsif rising_edge(clk_i) then
 
       -- --------------------------------------------------------------------
@@ -1109,17 +1109,17 @@ begin
           when csr_dscratch0_c => -- debug mode scratch register 0
             csr.dscratch0 <= csr_wdata;
 
-          when csr_mcx_selector_c =>
-            csr.mcx_selector <= csr_wdata;
+          --when csr_mcx_selector_c =>
+          --  csr.mcx_selector <= csr_wdata;
 
-          when csr_cx_status_c =>
-            csr.cx_status <= csr_wdata(6 downto 0);
+          --when csr_cx_status_c =>
+          --  csr.cx_status <= csr_wdata(6 downto 0);
 
-          when csr_mcx_table_c =>
-            csr.mcx_table <= csr_wdata(31 downto 12);
+          --when csr_mcx_table_c =>
+          --  csr.mcx_table <= csr_wdata(31 downto 12);
 
-          when csr_cx_index_c => 
-            csr.cx_index <= csr_wdata(9 downto 0);
+          --when csr_cx_index_c => 
+          --  csr.cx_index <= csr_wdata(9 downto 0);
 
           when others => -- undefined or implemented somewhere else
             null;
@@ -1347,17 +1347,17 @@ begin
             csr_rdata(0) <= bool_to_ulogic_f(RISCV_ISA_Zbc);   -- Zbc: carry-less multiplication
             csr_rdata(1) <= bool_to_ulogic_f(RISCV_ISA_Zcmop); -- Zcmop: compressed may-be-operations
 
-          when csr_mcx_selector_c =>
-            csr_rdata <= csr.mcx_selector;
+          --when csr_mcx_selector_c =>
+          --  csr_rdata <= csr.mcx_selector;
 
-          when csr_cx_status_c =>
-            csr_rdata(6 downto 0) <= csr.cx_status;
+          --when csr_cx_status_c =>
+          --  csr_rdata(6 downto 0) <= csr.cx_status;
 
-          when csr_mcx_table_c =>
-            csr_rdata(31 downto 12) <= csr.mcx_table;
+          --when csr_mcx_table_c =>
+          --  csr_rdata(31 downto 12) <= csr.mcx_table;
 
-          when csr_cx_index_c =>
-            csr_rdata(9 downto 0) <= csr.cx_index;
+          --when csr_cx_index_c =>
+          --  csr_rdata(9 downto 0) <= csr.cx_index;
           -- --------------------------------------------------------------------
           -- undefined/unavailable or implemented externally
           -- --------------------------------------------------------------------

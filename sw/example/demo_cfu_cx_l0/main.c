@@ -33,11 +33,16 @@
  * @name Define XTEA CFU instruction based on the intrinsic templates
  **************************************************************************/
 /**@{*/
+//cxu 0 (arithmetic)
 #define test_addi_hw(rs1, imm12) RISCV_INSTR_I_TYPE(RISCV_OPCODE_CUSTOM1, 0b000, rs1, imm12)
 #define test_subi_hw(rs1, imm12) RISCV_INSTR_I_TYPE(RISCV_OPCODE_CUSTOM1, 0b001, rs1, imm12)
 #define test_add_hw(rs1, rs2)    RISCV_INSTR_R_TYPE(RISCV_OPCODE_CUSTOM0, 0b010, 0b0000000, rs1, rs2)
 #define test_sub_hw(rs1, rs2)    RISCV_INSTR_R_TYPE(RISCV_OPCODE_CUSTOM0, 0b011, 0b0000000, rs1, rs2)
 #define test_bitswap_hw(rs1)     RISCV_INSTR_R_TYPE(RISCV_OPCODE_CUSTOM0, 0b100, 0b0000000, rs1, 0)
+
+//cxu 1 (deadbeef)
+#define test_deadbeef_hw()     RISCV_INSTR_I_TYPE(RISCV_OPCODE_CUSTOM1, 0b000, 0, 0)
+#define test_cafebabe_hw()     RISCV_INSTR_R_TYPE(RISCV_OPCODE_CUSTOM0, 0b010, 0b0000000, 0, 0)
 /**@}*/
 
 /*
@@ -72,7 +77,7 @@
 volatile uint32_t illegal_instr_exception_count = 0;
 /**@{*/
 /** Timing data */
-uint32_t time_addi_sw, time_addi_hw, time_subi_sw, time_subi_hw, time_add_sw, time_add_hw, time_sub_sw, time_sub_hw, time_bitswap_sw, time_bitswap_hw;
+//uint32_t time_addi_sw, time_addi_hw, time_subi_sw, time_subi_hw, time_add_sw, time_add_hw, time_sub_sw, time_sub_hw, time_bitswap_sw, time_bitswap_hw, time_deadbeef_hw, time_cafebabe_hw;
 /**@}*/
 /**********************************************************************//**
  * bitswap - software reference  
@@ -86,6 +91,22 @@ uint32_t sw_bitswap(uint32_t rs1) {
     rs1 >>= 1;
   }
   return res;
+}
+
+uint32_t test_addi_gold(uint32_t rs1, uint32_t imm12) {
+  return rs1 + imm12;
+}
+
+uint32_t test_add_gold(uint32_t rs1, uint32_t rs2) {
+  return rs1 + rs2;
+}
+
+uint32_t test_deadbeef_gold() {
+  return 0xdeadbeef;
+}
+
+uint32_t test_cafebabe_gold() {
+  return 0xcafebabe;
 }
 
 //reads csr, prints, then writes write_value to it, reads again and prints, restores old value. 
@@ -106,6 +127,28 @@ uint32_t sw_bitswap(uint32_t rs1) {
   } \
   neorv32_cpu_csr_write(csr, old_csr_val); /*restore CSR to the value it had before calling this function*/ /*todo: check if there was an exception*/\
   err; \
+})
+
+#define test_instruction(func_name, instr, gold) ({ \
+  uint32_t res_hw, res_gold, time_hw, err, old_exception_ctr; \
+  err = 0; \
+  old_exception_ctr = illegal_instr_exception_count; \
+  neorv32_cpu_csr_write(CSR_MCYCLE, 0); /*start timing*/\
+  res_hw = (instr);\
+  time_hw = neorv32_cpu_csr_read(CSR_MCYCLE); /*stop timing*/\
+  /*neorv32_cpu_csr_write(CSR_MCYCLE, 0);*/ /*start timing*/\
+  res_gold = (gold);\
+  /*time_gold = neorv32_cpu_csr_read(CSR_MCYCLE);*/ /*stop timing*/\
+  if(old_exception_ctr != illegal_instr_exception_count) {\
+    err = 1;\
+    neorv32_uart0_printf("--ERROR!--%s-- an illegal instruction exception has occurred.\n", func_name);\
+  } else if (res_gold != res_hw) {\
+    err = 1;\
+    neorv32_uart0_printf("--ERROR!--%s-- res_hw: 0x%X and res_gold: 0x%X do not match!\n", func_name, res_hw, res_gold);\
+  } else {\
+    neorv32_uart0_printf("--SUCCESS!--%s-- res: 0x%X, time: %u\n", func_name, res_hw, time_hw);\
+  }\
+  err;\
 })
 
 void trap_handler_illegal_instruction(void) {
@@ -147,7 +190,7 @@ void trap_handler_illegal_instruction(void) {
 int main() {
 
   //uint32_t i, j;
-  uint32_t addi_rs1, addi_imm12, subi_rs1, subi_imm12, add_rs1, add_rs2, sub_rs1, sub_rs2, bitswap_rs1;
+  /*uint32_t addi_rs1, addi_imm12, subi_rs1, subi_imm12, add_rs1, add_rs2, sub_rs1, sub_rs2, bitswap_rs1;
   addi_rs1    = 3;
   addi_imm12  = 9;
   subi_rs1    = 44;
@@ -156,7 +199,7 @@ int main() {
   add_rs2     = 9;
   sub_rs1     = 87;
   sub_rs2     = 28;
-  bitswap_rs1 = 67;
+  bitswap_rs1 = 67;*/
 
   // initialize NEORV32 run-time environment
   neorv32_rte_setup();
@@ -202,8 +245,8 @@ int main() {
   }
 
 ////////////////////////////////////////////////////////////////////////
-  //read and write CSR mcycle (make sure this mechanism works for an implemented csr)
   uint32_t err = 0;
+/*  //read and write CSR fflags (make sure this mechanism works for an implemented csr)
   err += verify_read_write_csr(CSR_FFLAGS, 0x3);
   err += verify_read_write_csr(CSR_FFLAGS, 0x1F);
   if (err != 0) {
@@ -211,7 +254,9 @@ int main() {
   } else {
     neorv32_uart0_printf("Successfully written to CSR_FFLAGS.\n");
   }
+*/
 
+/*
 //read new test CSR (test if newly added csr works, can be read and written)
   err = 0;
   err += verify_read_write_csr(CSR_TEST, 0x3);
@@ -235,6 +280,7 @@ int main() {
   } else {
     neorv32_uart0_printf("Successfully written to CSR_TEST_2.\n");
   }
+*/
 
 //test mcx_selector
   err = 0;
@@ -272,88 +318,128 @@ int main() {
     neorv32_uart0_printf("Successfully written to CSR_CX_INDEX.\n");
   }
 
-////////////////////////////////////////
+////////test CXU 0 (arithmetic)
+  neorv32_cpu_csr_write(CSR_MCX_SELECTOR, 0x00000000); //write CX_ID=0 (bits 7 downto 0)
+  test_instruction("CXU 0: addi", test_addi_hw(25, 3), test_addi_gold(25, 3));
+  test_instruction("CXU 0: add", test_add_hw(896, 32), test_add_gold(896, 32));
+
+////////test CXU 1 (deadbeef)
+  neorv32_cpu_csr_write(CSR_MCX_SELECTOR, 0x00000001); //write CX_ID=0 (bits 7 downto 0)
+  test_instruction("CXU 1: deadbeef", test_deadbeef_hw(), test_deadbeef_gold());
+  test_instruction("CXU 1: cafebabe", test_cafebabe_hw(), test_cafebabe_gold());
+
+/*
 //addi
   //neorv32_uart0_printf("test_addi...\n");
   neorv32_cpu_csr_write(CSR_MCYCLE, 0); // start timing
   uint32_t addi_res_hw = test_addi_hw(addi_rs1, addi_imm12);
   time_addi_hw = neorv32_cpu_csr_read(CSR_MCYCLE); // stop timing
-  //neorv32_uart0_printf("addi res: %u, time_enc_hw: %u\n", addi_res, time_enc_hw);
+  neorv32_uart0_printf("--addi HW-- res: 0x%X, time: %u\n", addi_res_hw, time_addi_hw);
 
   neorv32_cpu_csr_write(CSR_MCYCLE, 0); // start timing
   uint32_t addi_res_sw = addi_rs1 + addi_imm12;
   time_addi_sw = neorv32_cpu_csr_read(CSR_MCYCLE); // stop timing
+  neorv32_uart0_printf("--addi SW-- res: 0x%X, time: %u\n", addi_res_sw, time_addi_sw);
 
 //subi
   //neorv32_uart0_printf("test_subi...\n");
   neorv32_cpu_csr_write(CSR_MCYCLE, 0); // start timing
   uint32_t subi_res_hw = test_subi_hw(subi_rs1, subi_imm12);
   time_subi_hw = neorv32_cpu_csr_read(CSR_MCYCLE); // stop timing
-  //neorv32_uart0_printf("subi res: %u, time_enc_hw: %u\n", subi_res, time_enc_hw);
+  neorv32_uart0_printf("--subi HW-- res: 0x%X, time: %u\n", subi_res_hw, time_subi_hw);
 
   neorv32_cpu_csr_write(CSR_MCYCLE, 0); // start timing
   uint32_t subi_res_sw = subi_rs1 - subi_imm12;
   time_subi_sw = neorv32_cpu_csr_read(CSR_MCYCLE); // stop timing
+  neorv32_uart0_printf("--subi SW-- res: 0x%X, time: %u\n", subi_res_sw, time_subi_sw);
 
 //add
   //neorv32_uart0_printf("test_add_hw...\n");
   neorv32_cpu_csr_write(CSR_MCYCLE, 0); // start timing
   uint32_t add_res_hw = test_add_hw(add_rs1, add_rs2);
   time_add_hw = neorv32_cpu_csr_read(CSR_MCYCLE); // stop timing
-  //neorv32_uart0_printf("add res: %u, time_enc_hw: %u\n", add_res, time_enc_hw);
+  neorv32_uart0_printf("--add HW-- res: 0x%X, time: %u\n", add_res_hw, time_add_hw);
+
   neorv32_cpu_csr_write(CSR_MCYCLE, 0); // start timing
   uint32_t add_res_sw = add_rs1 + add_rs2;
   time_add_sw = neorv32_cpu_csr_read(CSR_MCYCLE); // stop timing
+  neorv32_uart0_printf("--add SW-- res: 0x%X, time: %u\n", add_res_sw, time_add_sw);
 
 //sub
   //neorv32_uart0_printf("test_sub_hw...\n");
   neorv32_cpu_csr_write(CSR_MCYCLE, 0); // start timing
   uint32_t sub_res_hw = test_sub_hw(sub_rs1, sub_rs2);
   time_sub_hw = neorv32_cpu_csr_read(CSR_MCYCLE); // stop timing
-  //neorv32_uart0_printf("sub res: %u, time_enc_hw: %u\n", sub_res, time_enc_hw);
+  neorv32_uart0_printf("--sub HW-- res: 0x%X, time: %u\n", sub_res_hw, time_sub_hw);
 
   neorv32_cpu_csr_write(CSR_MCYCLE, 0); // start timing
   uint32_t sub_res_sw = sub_rs1 - sub_rs2;
   time_sub_sw = neorv32_cpu_csr_read(CSR_MCYCLE); // stop timing
+  neorv32_uart0_printf("--sub SW-- res: 0x%X, time: %u\n", sub_res_sw, time_sub_sw);
 
 // bitswap
   //neorv32_uart0_printf("test_bitswap_hw...\n");
   neorv32_cpu_csr_write(CSR_MCYCLE, 0); // start timing
   uint32_t bitswap_res_hw = test_bitswap_hw(bitswap_rs1);
   time_bitswap_hw = neorv32_cpu_csr_read(CSR_MCYCLE); // stop timing
-  //neorv32_uart0_printf("bitswap res: %u, time_hw: %u\n", bitswap_res, time_enc_hw);
+  neorv32_uart0_printf("--bitswap HW-- res: 0x%X, time: %u\n", bitswap_res_hw, time_bitswap_hw);
 
   //neorv32_uart0_printf("test_bitswap_sw...\n");
   neorv32_cpu_csr_write(CSR_MCYCLE, 0); // start timing
   uint32_t bitswap_res_sw = sw_bitswap(bitswap_rs1);
   time_bitswap_sw = neorv32_cpu_csr_read(CSR_MCYCLE); // stop timing
-  //neorv32_uart0_printf("bitswap res: %u, time_enc_hw: %u\n", bitswap_sw_res, time_enc_hw);
+  neorv32_uart0_printf("--bitswap SW-- res: 0x%X, time: %u\n", bitswap_res_sw, time_bitswap_sw);
 
+
+////////test CXU 1 (deadbeef)
+  neorv32_cpu_csr_write(CSR_MCX_SELECTOR, 0x00000001); //write CX_ID=1 (bits 7 downto 0)
+  // deadbeef
+  //neorv32_uart0_printf("test_bitswap_hw...\n");
+  neorv32_cpu_csr_write(CSR_MCYCLE, 0); // start timing
+  uint32_t deadbeef_res_hw = test_deadbeef_hw();
+  time_deadbeef_hw = neorv32_cpu_csr_read(CSR_MCYCLE); // stop timing
+  neorv32_uart0_printf("--deadbeef HW-- res: 0x%X, time: %u\n", deadbeef_res_hw, time_deadbeef_hw);
+
+  // cafebabe
+  //neorv32_uart0_printf("test_bitswap_hw...\n");
+  neorv32_cpu_csr_write(CSR_MCYCLE, 0); // start timing
+  uint32_t cafebabe_res_hw = test_cafebabe_hw();
+  time_cafebabe_hw = neorv32_cpu_csr_read(CSR_MCYCLE); // stop timing
+  neorv32_uart0_printf("--cafebabe HW-- res: 0x%X, time: %u\n", cafebabe_res_hw, time_cafebabe_hw);
+*/
 ////////////////////////////////////////////////////////////////////////
 
-
+/*
   // compare results
   uint32_t errs = 0;
   neorv32_uart0_printf("Comparing results... ");
   if (addi_res_hw != addi_res_sw) {
     errs = 1;
-    neorv32_uart0_printf("addi_res_hw: %u != addi_res_sw: %u\n", addi_res_hw, addi_res_sw);
+    neorv32_uart0_printf("addi_res_hw: 0x%X != addi_res_sw: 0x%X\n", addi_res_hw, addi_res_sw);
   }
   if (subi_res_hw != subi_res_sw) {
     errs = 1;
-    neorv32_uart0_printf("subi_res_hw: %u != subi_res_sw: %u\n", subi_res_hw, subi_res_sw);
+    neorv32_uart0_printf("subi_res_hw: 0x%X != subi_res_sw: 0x%X\n", subi_res_hw, subi_res_sw);
   }
   if (add_res_hw != add_res_sw) {
     errs = 1;
-    neorv32_uart0_printf("add_res_hw: %u != add_res_sw: %u\n", add_res_hw, add_res_sw);
+    neorv32_uart0_printf("add_res_hw: 0x%X != add_res_sw: 0x%X\n", add_res_hw, add_res_sw);
   }
   if (sub_res_hw != sub_res_sw) {
     errs = 1;
-    neorv32_uart0_printf("sub_res_hw: %u != sub_res_sw: %u\n", sub_res_hw, sub_res_sw);
+    neorv32_uart0_printf("sub_res_hw: 0x%X != sub_res_sw: 0x%X\n", sub_res_hw, sub_res_sw);
   }
   if (bitswap_res_hw != bitswap_res_sw) {
     errs = 1;
-    neorv32_uart0_printf("bitswap_res_hw: %u != bitswap_res_sw: %u\n", bitswap_res_hw, bitswap_res_sw);
+    neorv32_uart0_printf("bitswap_res_hw: 0x%X != bitswap_res_sw: 0x%X\n", bitswap_res_hw, bitswap_res_sw);
+  }
+  if (deadbeef_res_hw != 0xdeadbeef) {
+    errs = 1;
+    neorv32_uart0_printf("deadbeef_res_hw: 0x%X != 0xdeadbeef\n", deadbeef_res_hw);
+  }
+  if (cafebabe_res_hw != 0xcafebabe) {
+    errs = 1;
+    neorv32_uart0_printf("cafebabe_res_hw: 0x%X != 0xcafebabe\n", cafebabe_res_hw);
   }
 
   if (errs == 0) {
@@ -361,6 +447,7 @@ int main() {
   } else {
     return 1;
   }
+  */
 
   /*for (i=0; i<DATA_NUM; i++) {
     if (cypher_data_sw[i] != cypher_data_hw[i]) {

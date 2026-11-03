@@ -651,8 +651,17 @@ package neorv32_package is
   constant csr_mcx_selector_c   : std_ulogic_vector(11 downto 0) := x"bc0";
   constant csr_mcx_table_c      : std_ulogic_vector(11 downto 0) := x"bc1";
   -- CSRs inside CFU
-  constant csr_test_c           : std_ulogic_vector(11 downto 0) := x"802";
-  constant csr_test_2_c         : std_ulogic_vector(11 downto 0) := x"803";
+  --constant csr_test_c           : std_ulogic_vector(11 downto 0) := x"802";
+  --constant csr_test_2_c         : std_ulogic_vector(11 downto 0) := x"803";
+
+-- CXU status
+  constant CXU_OK           : std_ulogic_vector(2 downto 0) := "000";
+  constant CXU_ERROR_CXU    : std_ulogic_vector(2 downto 0) := "001";
+  constant CXU_ERROR_STATE  : std_ulogic_vector(2 downto 0) := "010";
+  constant CXU_ERROR_OFF    : std_ulogic_vector(2 downto 0) := "011";
+  constant CXU_ERROR_FUNC   : std_ulogic_vector(2 downto 0) := "100";
+  constant CXU_ERROR_OP     : std_ulogic_vector(2 downto 0) := "101";
+  constant CXU_ERROR_CUSTOM : std_ulogic_vector(2 downto 0) := "110";
 
 -- **********************************************************************************************************
 -- CPU Control
