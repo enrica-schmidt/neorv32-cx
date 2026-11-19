@@ -51,7 +51,7 @@ build_demo_fabric: mkdir_build
 	FABulous ${FAB_PROJ_ROOT} -ts ./build_fabulous_fabric.tcl
 
 run_yosys: mkdir_build
-	${YOSYS} -p "synth_fabulous -top ${TOP_WRAPPER} -json ${BUILD_DIR}/${DESIGN}.json ${CUSTOM_PRIMS}" ${USER_DESIGN_VERILOG} ${TOP_WRAPPER_VERILOG}
+	${YOSYS} -p "synth_fabulous -complex-dff -carry ha -top ${TOP_WRAPPER} -json ${BUILD_DIR}/${DESIGN}.json ${CUSTOM_PRIMS}" ${USER_DESIGN_VERILOG} ${TOP_WRAPPER_VERILOG}
 
 run_nextpnr: mkdir_build
 	FAB_ROOT=${FAB_PROJ_ROOT} ${NEXTPNR} --uarch fabulous --json ${BUILD_DIR}/${DESIGN}.json -o fasm=${BUILD_DIR}/${DESIGN}.fasm

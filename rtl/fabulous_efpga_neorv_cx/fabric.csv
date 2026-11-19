@@ -3,14 +3,15 @@ NULL,N_IO,N_IO,N_IO,N_IO,N_IO,N_IO,NULL,,#
 W_term_single,LUT4AB,LUT4AB,LUT4AB,LUT4AB,LUT4AB,LUT4AB,E_term_single,,#
 W_term_single,LUT4AB,LUT4AB,LUT4AB,LUT4AB,LUT4AB,LUT4AB,E_term_single,,#
 W_term_single,LUT4AB,LUT4AB,LUT4AB,LUT4AB,LUT4AB,LUT4AB,E_term_single,,#
+W_term_single,LUT4AB,LUT4AB,LUT4AB,LUT4AB,LUT4AB,LUT4AB,E_term_single,,#
 NULL,S_IO,S_IO,S_IO,S_IO,S_IO,S_IO,NULL,,#
 FabricEnd,,,,,,,,,
 ,,,,,,,,,
 ,,,,,,,,,
 ParametersBegin,,,,,,,,,
 ConfigBitMode,frame_based,# default is frame_based,,frame_based,,,,,
-#FrameBitsPerRow,10,"# we configure an entire configuration frame over the full height of the device (like Virtex-II) and we write FrameBitsPerRow bits per, well, tile=CLB height",,,,,,,
-#MaxFramesPerCol,16,,,,,,,,
+#FrameBitsPerRow,32,"# we configure an entire configuration frame over the full height of the device (like Virtex-II) and we write FrameBitsPerRow bits per, well, tile=CLB height",,,,,,,
+#MaxFramesPerCol,20,,,,,,,,
 #Package,use work.my_package.all;,,,,,,,,
 GenerateDelayInSwitchMatrix,80,,,,,,,,
 MultiplexerStyle,custom,#,custom,generic,,,,,

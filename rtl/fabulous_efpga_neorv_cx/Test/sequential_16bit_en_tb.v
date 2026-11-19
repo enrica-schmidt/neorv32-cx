@@ -3,10 +3,10 @@
 `default_nettype none
 
 module sequential_16bit_en_tb ();
-    wire [27:0] I_top    ;
-    wire [27:0] T_top    ;
-    reg  [27:0] O_top = 0;
-    wire [55:0] A_cfg, B_cfg;
+    reg [119:0] UIO_BOT_UIN;
+    wire [119:0] UIO_BOT_UOUT;
+    reg  [119:0] UIO_TOP_UIN;
+    wire [119:0] UIO_TOP_UOUT;
 
     reg         CLK                 = 1'b0 ;
     reg         resetn              = 1'b1 ;
@@ -21,11 +21,10 @@ module sequential_16bit_en_tb ();
 
     // Instantiate both the fabric and the reference DUT
     eFPGA_top top_i (
-        .I_top          (I_top          ),
-        .T_top          (T_top          ),
-        .O_top          (O_top          ),
-        .A_config_C     (A_cfg          ),
-        .B_config_C     (B_cfg          ),
+        .UIO_BOT_UIN    (UIO_BOT_UIN),
+        .UIO_BOT_UOUT   (UIO_BOT_UOUT),
+        .UIO_TOP_UIN    (UIO_TOP_UIN),
+        .UIO_TOP_UOUT   (UIO_TOP_UOUT),
         .CLK            (CLK            ),
         .resetn         (resetn         ),
         .SelfWriteStrobe(self_write_strobe),
@@ -38,15 +37,15 @@ module sequential_16bit_en_tb ();
     );
 
 
-    wire [27:0] I_top_gold, oeb_gold, T_top_gold;
+    wire [27:0] I_top_gold, T_top_gold;
     sequential_16bit_en dut_i (
         .clk   (CLK       ),
         .io_out(I_top_gold),
-        .io_oeb(oeb_gold  ),
-        .io_in (O_top     )
+        .io_oeb(T_top_gold),
+        .io_in (UIO_TOP_UIN[27:0])
     );
 
-    assign T_top_gold = ~oeb_gold;
+    //assign T_top_gold = ~oeb_gold;
 
     localparam integer       MAX_BITBYTES               = 16384;
     reg                [7:0] bitstream   [MAX_BITBYTES]        ;
@@ -105,16 +104,16 @@ module sequential_16bit_en_tb ();
         config_done = 1'b1;  // configuration upload complete -> trigger GL X-init
         repeat (100) @(posedge CLK);
         // Enable and reset the counter
-        O_top = 28'b0000_0000_0000_0000_0000_0000_0011;
+        UIO_TOP_UIN[27:0] = 28'b0000_0000_0000_0000_0000_0000_0011;
         repeat (5) @(posedge CLK);
         // Deassert reset while keeping the counter enabled
-        O_top = 28'b0000_0000_0000_0000_0000_0000_0010;
+        UIO_TOP_UIN[27:0] = 28'b0000_0000_0000_0000_0000_0000_0010;
         for (i = 0; i < 100; i = i + 1) begin
             @(negedge CLK);
-            $display("fabric(I_top) = 0x%X gold = 0x%X, fabric(T_top) = 0x%X gold = 0x%X", I_top,
-                I_top_gold, T_top, T_top_gold);
-            if (I_top !== I_top_gold) have_errors = 1'b1;
-            if (T_top !== T_top_gold) have_errors = 1'b1;
+            $display("fabric(I_top: UIO_BOT_UOUT) = 0x%X gold = 0x%X, fabric(T_top: UIO_TOP_UOUT) = 0x%X gold = 0x%X", UIO_BOT_UOUT[27:0],
+                I_top_gold, UIO_TOP_UOUT[27:0], T_top_gold);
+            if (UIO_BOT_UOUT[27:0] !== I_top_gold) have_errors = 1'b1;
+            if (UIO_TOP_UOUT[27:0] !== T_top_gold) have_errors = 1'b1;
         end
 
         if (have_errors) $fatal;
