@@ -267,9 +267,13 @@ enum NEORV32_CSR_enum {
   CSR_CX_STATUS      = 0x801,
   CSR_MCX_SELECTOR   = 0xbc0,
   CSR_MCX_TABLE      = 0xbc1,
+  CSR_GUID_0         = 0x802,
+  CSR_GUID_1         = 0x803,
+  CSR_GUID_2         = 0x804,
+  CSR_GUID_3         = 0x805,
   /*CSRs inside CFU*/
-  CSR_TEST           = 0x802,
-  CSR_TEST_2         = 0x803
+  //CSR_TEST           = 0x802,
+  //CSR_TEST_2         = 0x803
 };
 
 /**********************************************************************//**

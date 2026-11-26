@@ -53,6 +53,10 @@ architecture neorv32_cpu_alu_cfu_rtl of neorv32_cpu_alu_cfu is
   signal csr_cx_status    : std_ulogic_vector(6 downto 0);
   signal csr_mcx_table    : std_ulogic_vector(19 downto 0);
   signal csr_cx_index     : std_ulogic_vector(9 downto 0);
+  signal csr_guid_0       : std_ulogic_vector(31 downto 0); 
+  signal csr_guid_1       : std_ulogic_vector(31 downto 0); 
+  signal csr_guid_2       : std_ulogic_vector(31 downto 0); 
+  signal csr_guid_3       : std_ulogic_vector(31 downto 0); 
 
   -- supported CFU opcodes --
   --constant opcode_custom0_c : std_ulogic_vector(6 downto 0) := "0001011"; -- CUSTOM-0 opcode
@@ -81,18 +85,60 @@ architecture neorv32_cpu_alu_cfu_rtl of neorv32_cpu_alu_cfu is
   --signal funct3 : std_ulogic_vector(2 downto 0); -- i-type/r-type function select
   --signal imm12  : std_ulogic_vector(11 downto 0); -- i-type immediate
 
+  signal req_instr     : std_ulogic_vector(31 downto 0);
+  signal req_data0     : std_ulogic_vector((CXU_DATA_W - 1) downto 0);
+  signal req_data1     : std_ulogic_vector((CXU_DATA_W - 1) downto 0);
+
   signal req_valid_0   : std_ulogic;
-  signal req_instr_0   : std_ulogic_vector(31 downto 0);
-  signal req_data0_0   : std_ulogic_vector((CXU_DATA_W - 1) downto 0);
-  signal req_data1_0   : std_ulogic_vector((CXU_DATA_W - 1) downto 0);
   signal resp_status_0 : std_ulogic_vector((CXU_STATUS_W - 1) downto 0);
   signal resp_data_0   : std_ulogic_vector((CXU_DATA_W - 1) downto 0);
+
   signal req_valid_1   : std_ulogic;
-  signal req_instr_1   : std_ulogic_vector(31 downto 0);
-  signal req_data0_1   : std_ulogic_vector((CXU_DATA_W - 1) downto 0);
-  signal req_data1_1   : std_ulogic_vector((CXU_DATA_W - 1) downto 0);
   signal resp_status_1 : std_ulogic_vector((CXU_STATUS_W - 1) downto 0);
   signal resp_data_1   : std_ulogic_vector((CXU_DATA_W - 1) downto 0);
+  --signal req_instr_1   : std_ulogic_vector(31 downto 0);
+  --signal req_data0_1   : std_ulogic_vector((CXU_DATA_W - 1) downto 0);
+  --signal req_data1_1   : std_ulogic_vector((CXU_DATA_W - 1) downto 0);
+
+  signal efpga_uio_bot_uin       : std_logic_vector(119 downto 0);
+  signal efpga_uio_bot_uout      : std_logic_vector(119 downto 0);
+  signal efpga_uio_top_uin       : std_logic_vector(119 downto 0);
+  signal efpga_uio_top_uout      : std_logic_vector(119 downto 0);
+  signal efpga_self_write_strobe : std_logic;
+  signal efpga_self_write_data   : std_logic_vector(31 downto 0);
+  signal efpga_com_active        : std_logic;
+  signal efpga_receive_led       : std_logic;
+  signal cx_guid                 : std_logic_vector(127 downto 0);
+
+  component eFPGA_top is
+    generic (
+      include_eFPGA    : integer := 1;
+      NumberOfRows     : integer := 4;
+      NumberOfCols     : integer := 8;
+      FrameBitsPerRow  : integer := 32;
+      MaxFramesPerCol  : integer := 20;
+      desync_flag      : integer := 20;
+      FrameSelectWidth : integer := 5;
+      RowSelectWidth   : integer := 5
+    );
+    port (
+      -- External IO port
+      UIO_BOT_UIN     : in  std_logic_vector(119 downto 0);
+      UIO_BOT_UOUT    : out std_logic_vector(119 downto 0);
+      UIO_TOP_UIN     : in  std_logic_vector(119 downto 0);
+      UIO_TOP_UOUT    : out std_logic_vector(119 downto 0);
+      -- Config related ports
+      CLK             : in  std_logic;
+      resetn          : in  std_logic;
+      SelfWriteStrobe : in  std_logic;
+      SelfWriteData   : in  std_logic_vector(31 downto 0);
+      Rx              : in  std_logic;
+      ComActive       : out std_logic;
+      ReceiveLED      : out std_logic;
+      s_clk           : in  std_logic;
+      s_data          : in  std_logic
+    );
+  end component;
 
 begin
 
@@ -118,50 +164,106 @@ begin
     result_o      => result_o,
     valid_o       => valid_o,
     req_valid_0   => req_valid_0,
-    req_instr_0   => req_instr_0,
-    req_data0_0   => req_data0_0,
-    req_data1_0   => req_data1_0,
+    req_instr_0   => req_instr,
+    req_data0_0   => req_data0,
+    req_data1_0   => req_data1,
     resp_status_0 => resp_status_0,
     resp_data_0   => resp_data_0,
     req_valid_1   => req_valid_1,
-    req_instr_1   => req_instr_1,
-    req_data0_1   => req_data0_1,
-    req_data1_1   => req_data1_1,
+    req_instr_1   => req_instr,
+    req_data0_1   => req_data0,
+    req_data1_1   => req_data1,
     resp_status_1 => resp_status_1,
     resp_data_1   => resp_data_1
   );
 
-  cxu0: entity neorv32.neorv32_cpu_alu_cfu_cxu_arithmetic
-  generic map (
-    --CXU_CXU_ID_W   => CXU_CXU_ID_W,
-    --CXU_FUNC_ID_W  => CXU_FUNC_ID_W,
-    CXU_DATA_W     => CXU_DATA_W,
-    CXU_STATUS_W   => CXU_STATUS_W
-  )
+  config_eFPGA: entity neorv32.neorv32_cpu_alu_cfu_config
   port map (
-    req_valid   => req_valid_0,
-    req_instr   => req_instr_0,
-    req_data0   => req_data0_0,
-    req_data1   => req_data1_0,
-    resp_status => resp_status_0,
-    resp_data   => resp_data_0
+    clk_i           => clk_i,
+    --rstn_i          => rstn_i,
+    cx_guid         => cx_guid,
+    start_i         => start_i,
+    SelfWriteStrobe => efpga_self_write_strobe,
+    SelfWriteData   => efpga_self_write_data
   );
 
-  cxu1: entity neorv32.neorv32_cpu_alu_cfu_cxu_deadbeef
-  generic map (
+  cx_guid <= csr_guid_3 & csr_guid_2 & csr_guid_1 & csr_guid_0;
+
+  --cxu0: entity neorv32.neorv32_cpu_alu_cfu_cxu_arithmetic
+  --generic map (
     --CXU_CXU_ID_W   => CXU_CXU_ID_W,
     --CXU_FUNC_ID_W  => CXU_FUNC_ID_W,
-    CXU_DATA_W     => CXU_DATA_W,
-    CXU_STATUS_W   => CXU_STATUS_W
+  --  CXU_DATA_W     => CXU_DATA_W,
+  --  CXU_STATUS_W   => CXU_STATUS_W
+  --)
+  --port map (
+  --  req_valid   => req_valid_0,
+  --  req_instr   => req_instr_0,
+  --  req_data0   => req_data0_0,
+  --  req_data1   => req_data1_0,
+  --  resp_status => resp_status_0,
+  --  resp_data   => resp_data_0
+  --);
+
+  --cxu1: entity neorv32.neorv32_cpu_alu_cfu_cxu_deadbeef
+  --generic map (
+    --CXU_CXU_ID_W   => CXU_CXU_ID_W,
+    --CXU_FUNC_ID_W  => CXU_FUNC_ID_W,
+  --  CXU_DATA_W     => CXU_DATA_W,
+  --  CXU_STATUS_W   => CXU_STATUS_W
+  --)
+  --port map (
+  --  req_valid   => req_valid_1,
+  --  req_instr   => req_instr_1,
+  --  req_data0   => req_data0_1,
+  --  req_data1   => req_data1_1,
+  --  resp_status => resp_status_1,
+  --  resp_data   => resp_data_1
+  --);
+
+  efpga: eFPGA_top
+  generic map (
+    include_eFPGA    => 1,
+    NumberOfRows     => 4,
+    NumberOfCols     => 8,
+    FrameBitsPerRow  => 32,
+    MaxFramesPerCol  => 20,
+    desync_flag      => 20,
+    FrameSelectWidth => 5,
+    RowSelectWidth   => 5
   )
   port map (
-    req_valid   => req_valid_1,
-    req_instr   => req_instr_1,
-    req_data0   => req_data0_1,
-    req_data1   => req_data1_1,
-    resp_status => resp_status_1,
-    resp_data   => resp_data_1
+    UIO_BOT_UIN     => efpga_uio_bot_uin,
+    UIO_BOT_UOUT    => efpga_uio_bot_uout,
+    UIO_TOP_UIN     => efpga_uio_top_uin,
+    UIO_TOP_UOUT    => efpga_uio_top_uout,
+    CLK             => clk_i,
+    resetn          => rstn_i,
+    SelfWriteStrobe => efpga_self_write_strobe,
+    SelfWriteData   => efpga_self_write_data,
+    Rx              => '1', --uart interface unused
+    ComActive       => efpga_com_active,
+    ReceiveLED      => efpga_receive_led,
+    s_clk           => '0', --bitbang interface unused
+    s_data          => '0'
   );
+  
+  efpga_uio_bot_uin (0)             <= req_valid_0;
+  efpga_uio_bot_uin (60)            <= req_valid_1;
+  efpga_uio_bot_uin (59 downto 1)   <= (others => '0');
+  efpga_uio_bot_uin (119 downto 61) <= (others => '0');
+
+  efpga_uio_top_uin ((1 * CXU_DATA_W) - 1 downto (0 * CXU_DATA_W)) <= req_instr;
+  efpga_uio_top_uin ((2 * CXU_DATA_W) - 1 downto (1 * CXU_DATA_W)) <= req_data0;
+  efpga_uio_top_uin ((3 * CXU_DATA_W) - 1 downto (2 * CXU_DATA_W)) <= req_data1;
+  efpga_uio_top_uin (efpga_uio_top_uin'high downto (3 * CXU_DATA_W)) <= (others => '0');
+
+  --efpga_self_write_strobe <= (others => '0');
+  --efpga_self_write_data   <= (others => '0');
+  resp_status_0           <= efpga_uio_bot_uout(CXU_DATA_W + 2 downto CXU_DATA_W);
+  resp_data_0             <= efpga_uio_bot_uout((CXU_DATA_W - 1) downto 0);
+  resp_status_1           <= efpga_uio_bot_uout(((60 + CXU_DATA_W) + 2) downto (60 + CXU_DATA_W));
+  resp_data_1             <= efpga_uio_bot_uout((60 + (CXU_DATA_W - 1)) downto 60);
 
   -- CSR Access -----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -174,6 +276,10 @@ begin
       csr_cx_status    <= (others => '0');
       csr_mcx_table    <= (others => '0');
       csr_cx_index     <= (others => '0');
+      csr_guid_0       <= (others => '0');
+      csr_guid_1       <= (others => '0'); 
+      csr_guid_2       <= (others => '0');
+      csr_guid_3       <= (others => '0'); 
       --csr_test   <= (others => '0');
       --csr_test_2 <= (others => '0');
     elsif rising_edge(clk_i) then
@@ -186,13 +292,21 @@ begin
           csr_mcx_table <= csr_wdata_i(31 downto 12);
         elsif (csr_addr_i = csr_cx_index_c) then
           csr_cx_index <= csr_wdata_i(9 downto 0);
+        elsif (csr_addr_i = csr_guid_0_c) then
+          csr_guid_0 <= csr_wdata_i(31 downto 0);
+        elsif (csr_addr_i = csr_guid_1_c) then
+          csr_guid_1 <= csr_wdata_i(31 downto 0);
+        elsif (csr_addr_i = csr_guid_2_c) then
+          csr_guid_2 <= csr_wdata_i(31 downto 0);
+        elsif (csr_addr_i = csr_guid_3_c) then
+          csr_guid_3 <= csr_wdata_i(31 downto 0);
         end if;
       end if;
     end if;
   end process;
 
   -- read access --
-  csr_read: process(csr_addr_i, csr_mcx_selector, csr_cx_status, csr_mcx_table, csr_cx_index)
+  csr_read: process(csr_addr_i, csr_mcx_selector, csr_cx_status, csr_mcx_table, csr_cx_index, csr_guid_0, csr_guid_1, csr_guid_2, csr_guid_3)
   begin
     csr_rdata_o <= (others => '0'); -- default
     case csr_addr_i is
@@ -200,6 +314,10 @@ begin
       when csr_cx_status_c    => csr_rdata_o(6 downto 0) <= csr_cx_status;
       when csr_mcx_table_c    => csr_rdata_o(31 downto 12) <= csr_mcx_table;
       when csr_cx_index_c     => csr_rdata_o(9 downto 0) <= csr_cx_index;
+      when csr_guid_0_c       => csr_rdata_o(31 downto 0) <= csr_guid_0;
+      when csr_guid_1_c       => csr_rdata_o(31 downto 0) <= csr_guid_1;
+      when csr_guid_2_c       => csr_rdata_o(31 downto 0) <= csr_guid_2;
+      when csr_guid_3_c       => csr_rdata_o(31 downto 0) <= csr_guid_3;
       when others => null;
     end case;
   end process;

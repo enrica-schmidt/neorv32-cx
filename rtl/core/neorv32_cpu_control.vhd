@@ -672,7 +672,7 @@ begin
         --csr_valid(2) <= bool_to_ulogic_f(RISCV_ISA_Zcx); check if cx extension is present
       --  csr_valid(2) <= '1';
 
-      when csr_mcx_selector_c | csr_mcx_table_c | csr_cx_index_c | csr_cx_status_c =>
+      when csr_mcx_selector_c | csr_mcx_table_c | csr_cx_index_c | csr_cx_status_c | csr_guid_0_c | csr_guid_1_c | csr_guid_2_c | csr_guid_3_c  =>
         csr_valid(2) <= bool_to_ulogic_f(RISCV_ISA_Xcfu);
 
       -- undefined / not implemented --
