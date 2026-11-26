@@ -36,7 +36,7 @@ begin
     -- Processor Clocking --
     CLOCK_FREQUENCY     => 100_000_000, -- clock frequency of clk_i in Hz
     -- Boot Configuration --
-    BOOT_MODE_SELECT    => 0,           -- boot via internal bootloader
+    BOOT_MODE_SELECT    => 2,           -- Internal IMEM initialized with application image
     -- On-Chip Debugger (OCD) --
     OCD_EN              => true,        -- on-chip debugger
     OCD_AUTHENTICATION  => true,        -- on-chip debugger authentication
