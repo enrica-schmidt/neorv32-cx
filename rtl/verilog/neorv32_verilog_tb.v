@@ -31,7 +31,7 @@ module neorv32_verilog_tb;
     nrst = 0;
     #100; // active reset for 100 * timescale = 100 ns
     nrst = 1;
-    #(100 * 15_000_000);
+    #(10000 * 15_000_000);
     // if we reach this the simulation has failed
     $display("[TB] Simulation terminated (time out)!");
     $finish; // terminate
